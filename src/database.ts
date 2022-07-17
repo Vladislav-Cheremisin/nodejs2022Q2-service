@@ -1,22 +1,21 @@
 import { User } from './interfaces';
+import * as uuid from 'uuid';
 
 class InMemoryDatabase {
-  private userDatabase: User[];
+  public userDatabase: User[];
 
   constructor() {
     this.userDatabase = [
       {
-        id: '1',
+        id: uuid.v4(),
         login: 'TestUser',
-        password: '123e123ee',
-        version: 2,
-        createdAt: 123,
-        updatedAt: 321,
+        password: 'qwerty',
+        version: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ];
   }
-
-  getUsers = (): string => JSON.stringify(this.userDatabase);
 }
 
 const database = new InMemoryDatabase();

@@ -4,6 +4,9 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { readFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import { parse } from 'yaml';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,7 +16,7 @@ async function bootstrap() {
 
   SwaggerModule.setup('/', app, parsedDocs);
 
-  await app.listen(4000);
+  await app.listen(process.env.PORT);
 }
 bootstrap();
 
