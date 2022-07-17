@@ -19,6 +19,3 @@ async function bootstrap() {
   await app.listen(process.env.PORT);
 }
 bootstrap();
-
-console.log(__dirname);
-console.log(dirname(__dirname));
