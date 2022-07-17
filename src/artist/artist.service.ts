@@ -63,11 +63,21 @@ export class ArtistService {
         if (typeof updateArtistDto.name === 'string') {
           dbArtist.name = updateArtistDto.name;
           artist.name = dbArtist.name;
+        } else {
+          throw new HttpException(
+            'Incorrect name in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (typeof updateArtistDto.grammy === 'boolean') {
           dbArtist.grammy = updateArtistDto.grammy;
           artist.grammy = dbArtist.grammy;
+        } else {
+          throw new HttpException(
+            'Incorrect grammy data in request body, use true or false',
+            HttpStatus.BAD_REQUEST,
+          );
         }
       }
     });
@@ -89,6 +99,24 @@ export class ArtistService {
         artistExists = true;
       }
     }
+
+    database.trackDatabase.forEach((track) => {
+      if (track.artistId === id) {
+        track.artistId = null;
+      }
+    });
+
+    database.albumDatabase.forEach((album) => {
+      if (album.artistId === id) {
+        album.artistId = null;
+      }
+    });
+
+    database.favorites.artists.forEach((trackId, index) => {
+      if (trackId === id) {
+        database.favorites.artists.splice(index, 1);
+      }
+    });
 
     if (!artistExists) {
       throw new HttpException(

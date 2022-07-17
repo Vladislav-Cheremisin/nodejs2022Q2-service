@@ -85,46 +85,43 @@ export class UserService {
   }
 
   updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): string {
-    const user = JSON.parse(this.getUser(id));
+    if (!uuid.validate(id)) {
+      throw new HttpException('Incorrect user ID', HttpStatus.BAD_REQUEST);
+    }
 
-    database.userDatabase.forEach((dbUser) => {
-      if (dbUser.id === user.id) {
-        user.password = dbUser.password;
+    let foundedUser: User | null = null;
+
+    database.userDatabase.forEach((user) => {
+      if (user.id === id) {
+        foundedUser = user;
       }
     });
 
-    if (
-      typeof updatePasswordDto.oldPassword === 'string' &&
-      typeof updatePasswordDto.newPassword === 'string' &&
-      updatePasswordDto.oldPassword === user.password
-    ) {
-      database.userDatabase.forEach((dbUser) => {
-        if (user.id === dbUser.id) {
-          const timeStamp = Date.now();
+    if (foundedUser) {
+      if (
+        typeof updatePasswordDto.oldPassword === 'string' &&
+        typeof updatePasswordDto.newPassword === 'string' &&
+        updatePasswordDto.oldPassword === foundedUser.password
+      ) {
+        foundedUser.password = updatePasswordDto.newPassword;
+        foundedUser.version += 1;
+        foundedUser.updatedAt = Date.now();
 
-          user.password = updatePasswordDto.newPassword;
-          user.updatedAt = timeStamp;
-          user.version += 1;
+        const response = Object.assign({}, foundedUser);
 
-          dbUser.password = user.password;
-          dbUser.updatedAt = user.updatedAt;
-          dbUser.version = user.version;
-        }
-      });
+        delete response.password;
 
-      const userResponse: UserResponse = {
-        id: user.id,
-        login: user.login,
-        version: user.version,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      };
-
-      return JSON.stringify(userResponse);
+        return JSON.stringify(response);
+      } else {
+        throw new HttpException(
+          `Wrong old password or incorrect body data`,
+          HttpStatus.FORBIDDEN,
+        );
+      }
     } else {
       throw new HttpException(
-        'Wrong old password or incorrect request body',
-        HttpStatus.FORBIDDEN,
+        `User with entered id doesn't exist`,
+        HttpStatus.NOT_FOUND,
       );
     }
   }

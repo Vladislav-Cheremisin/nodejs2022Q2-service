@@ -68,19 +68,34 @@ export class AlbumService {
         if (typeof updateAlbumDto.name === 'string') {
           dbAlbum.name = updateAlbumDto.name;
           album.name = dbAlbum.name;
+        } else {
+          throw new HttpException(
+            'Incorrect ID in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (typeof updateAlbumDto.year === 'number') {
           dbAlbum.year = updateAlbumDto.year;
           album.year = dbAlbum.year;
+        } else {
+          throw new HttpException(
+            'Incorrect year in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (
-          typeof updateAlbumDto.artistId === 'string' ||
+          uuid.validate(updateAlbumDto.artistId) ||
           updateAlbumDto.artistId === null
         ) {
           dbAlbum.artistId = updateAlbumDto.artistId;
           album.artistId = dbAlbum.artistId;
+        } else {
+          throw new HttpException(
+            'Incorrect artist ID in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
       }
     });
@@ -100,6 +115,18 @@ export class AlbumService {
         database.albumDatabase.splice(i, 1);
 
         albumExists = true;
+
+        database.trackDatabase.forEach((track) => {
+          if (track.albumId === id) {
+            track.albumId = null;
+          }
+        });
+
+        database.favorites.albums.forEach((albumId, index) => {
+          if (albumId === id) {
+            database.favorites.albums.splice(index, 1);
+          }
+        });
       }
     }
 

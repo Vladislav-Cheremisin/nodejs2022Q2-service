@@ -4,6 +4,6 @@ import { FavAlbumController } from './fav-album.controller';
 
 @Module({
   providers: [FavAlbumService],
-  controllers: [FavAlbumController]
+  controllers: [FavAlbumController],
 })
 export class FavAlbumModule {}

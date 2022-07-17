@@ -73,27 +73,47 @@ export class TrackService {
         if (typeof updateTrackDto.name === 'string') {
           dbTrack.name = updateTrackDto.name;
           track.name = dbTrack.name;
+        } else {
+          throw new HttpException(
+            'Incorrect name in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (typeof updateTrackDto.duration === 'number') {
           dbTrack.duration = updateTrackDto.duration;
           track.duration = dbTrack.duration;
+        } else {
+          throw new HttpException(
+            'Incorrect duration in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (
-          typeof updateTrackDto.albumId === 'string' ||
+          uuid.validate(updateTrackDto.albumId) ||
           updateTrackDto.albumId === null
         ) {
           dbTrack.albumId = updateTrackDto.albumId;
           track.albumId = dbTrack.albumId;
+        } else {
+          throw new HttpException(
+            'Incorrect album ID in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (
-          typeof updateTrackDto.artistId === 'string' ||
+          uuid.validate(updateTrackDto.artistId) ||
           updateTrackDto.artistId === null
         ) {
           dbTrack.artistId = updateTrackDto.artistId;
           track.artistId = dbTrack.artistId;
+        } else {
+          throw new HttpException(
+            'Incorrect artist ID in request body',
+            HttpStatus.BAD_REQUEST,
+          );
         }
       }
     });
@@ -113,6 +133,12 @@ export class TrackService {
         database.trackDatabase.splice(i, 1);
 
         trackExists = true;
+
+        database.favorites.tracks.forEach((trackId, index) => {
+          if (trackId === id) {
+            database.favorites.tracks.splice(index, 1);
+          }
+        });
       }
     }
 
