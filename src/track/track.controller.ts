@@ -33,8 +33,8 @@ export class TrackController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-type', 'application/json')
-  createUser(@Body() createUserDto: CreateTrackDto): string {
-    return this.trackService.createTrack(createUserDto);
+  createTrack(@Body() createArtistDto: CreateTrackDto): string {
+    return this.trackService.createTrack(createArtistDto);
   }
 
   @Put(':id')
@@ -49,7 +49,7 @@ export class TrackController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header('Content-type', 'application/json')
-  deleteUser(@Param('id') id: string) {
+  deleteTrack(@Param('id') id: string) {
     return this.trackService.deleteTrack(id);
   }
 }

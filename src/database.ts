@@ -1,9 +1,10 @@
-import { Track, User } from './interfaces';
+import { Artist, Track, User } from './interfaces';
 import * as uuid from 'uuid';
 
 class InMemoryDatabase {
   public userDatabase: User[];
   public trackDatabase: Track[];
+  public artistDatabase: Artist[];
 
   constructor() {
     this.userDatabase = [
@@ -24,6 +25,14 @@ class InMemoryDatabase {
         artistId: null,
         albumId: null,
         duration: 210,
+      },
+    ];
+
+    this.artistDatabase = [
+      {
+        id: uuid.v4(),
+        name: 'Test Artist',
+        grammy: false,
       },
     ];
   }

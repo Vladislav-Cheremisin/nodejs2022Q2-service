@@ -34,25 +34,25 @@ export class TrackService {
     }
   }
 
-  createTrack(createUserDto: CreateTrackDto): string {
+  createTrack(CreateTrackDto: CreateTrackDto): string {
     if (
-      typeof createUserDto.name === 'string' &&
-      typeof createUserDto.duration === 'number'
+      typeof CreateTrackDto.name === 'string' &&
+      typeof CreateTrackDto.duration === 'number'
     ) {
       const result: Track = {
         id: uuid.v4(),
-        name: createUserDto.name,
+        name: CreateTrackDto.name,
         artistId: null,
         albumId: null,
-        duration: createUserDto.duration,
+        duration: CreateTrackDto.duration,
       };
 
-      if (typeof createUserDto.albumId === 'string') {
-        result.albumId = createUserDto.albumId;
+      if (typeof CreateTrackDto.albumId === 'string') {
+        result.albumId = CreateTrackDto.albumId;
       }
 
-      if (typeof createUserDto.artistId === 'string') {
-        result.artistId = createUserDto.artistId;
+      if (typeof CreateTrackDto.artistId === 'string') {
+        result.artistId = CreateTrackDto.artistId;
       }
 
       database.trackDatabase.push(result);
@@ -103,7 +103,7 @@ export class TrackService {
 
   deleteTrack(id: string): void {
     if (!uuid.validate(id)) {
-      throw new HttpException('Incorrect user ID', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Incorrect track ID', HttpStatus.BAD_REQUEST);
     }
 
     let trackExists = false;
@@ -118,7 +118,7 @@ export class TrackService {
 
     if (!trackExists) {
       throw new HttpException(
-        'User with entered id not found',
+        'Track with entered id not found',
         HttpStatus.NOT_FOUND,
       );
     }
