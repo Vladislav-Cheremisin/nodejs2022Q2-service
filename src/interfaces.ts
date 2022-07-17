@@ -37,9 +37,23 @@ interface Album {
 }
 
 interface Favorites {
-  artists: string[]; // favorite artists ids
-  albums: string[]; // favorite albums ids
-  tracks: string[]; // favorite tracks ids
+  artists: string[];
+  albums: string[];
+  tracks: string[];
 }
 
-export { User, UserResponse, Artist, Track, Album, Favorites };
+interface FavoritesResponse {
+  artists: Artist[];
+  albums: Album[];
+  tracks: Track[];
+}
+
+export {
+  User,
+  UserResponse,
+  Artist,
+  Track,
+  Album,
+  Favorites,
+  FavoritesResponse,
+};
