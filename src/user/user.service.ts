@@ -85,6 +85,14 @@ export class UserService {
   }
 
   updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): string {
+    if (
+      !updatePasswordDto ||
+      !updatePasswordDto.oldPassword ||
+      !updatePasswordDto.newPassword
+    ) {
+      throw new HttpException('Incorrect request body', HttpStatus.BAD_REQUEST);
+    }
+
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect user ID', HttpStatus.BAD_REQUEST);
     }
