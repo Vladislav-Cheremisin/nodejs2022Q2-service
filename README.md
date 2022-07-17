@@ -1,72 +1,115 @@
-# Home Library Service
+## Установка приложения:
 
-## Prerequisites
+1. Установите LTS версию NodeJS с официального сайта.
+2. Скачайте файлы приложения нажав на кнопку `Code` в правом верхнем углу репозитория и выбрав из контекстного меню удобный для вас способ загрузки.
+3. Распакуйте файлы приложения на локальном диске своего устройства.
+4. Откройте папку с файлами приложения используя редактор кода (например VSCode) или консоль.
+5. Выполните в консоли команду `npm install` для того чтобы установить все необходимые пакеты.
 
-- Git - [Download & Install Git](https://git-scm.com/downloads).
-- Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+## Запуск приложения:
 
-## Downloading
+Приложение имеет следующие консольные команды позволяющие произвести запуск:
 
-```
-git clone {repository URL}
-```
+- `npm run start` - Запустить приложение.
+- `npm run start:dev` - Запустить приложение в режиме разработки (с использованием Nodemon).
 
-## Installing NPM modules
+Если открыть приложение в браузере (по умолчанию http://localhost:4000), то на корневой конечной точке (`/`) можно взаимодействовать с `yaml` документацией.
 
-```
-npm install
-```
+## Настройка приложения:
 
-## Running application
+Порт используемый по умолчанию для работы приложения содержится в файле `.env`, вы можете отредактировать его при необходимости.
 
-```
-npm start
-```
+## Функционал приложения
 
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
+На текущем этапе приложение предоставляет пользователю возможность взаимодействовать с REST сервисом и сохранять/получать/редактировать/удалять данные в in memory database. **После перезапуска приложения все имеющиеся в базе данных данные будут удалены**.
 
-## Testing
+Дотсупные конечные точки и запросы:
 
-After application running open new terminal and enter:
+Конечная точка `/user`:
 
-To run all tests without authorization
+- **GET** `/user`- получить всех пользователей
+- **GET** `/user/:id` - получить одного пользователя по id (uuid v4)
+- **POST** `/user` - создать пользователя
 
-```
-npm run test
-```
+Обязательные свойства в теле запроса:
 
-To run only one of all test suites
+`login: string`
+`password: string`
 
-```
-npm run test -- <path to suite>
-```
+- **PUT** `/user/:id` - изменить пароль пользователя
+- **DELETE** `/user/:id` - удалить пользователя
 
-To run all test with authorization
+Конечная точка `/track`:
 
-```
-npm run test:auth
-```
+**GET** `/track` - получить все треки
+**GET** `/track/:id` - получить один трек по id (uuid v4)
+**POST** `/track` - создать трек
 
-To run only specific test suite with authorization
+Обязательные свойства в теле запроса:
 
-```
-npm run test:auth -- <path to suite>
-```
+`name: string`
+`duration: number`
 
-### Auto-fix and format
+- **PUT** `/track/:id` - обновить данные о треке
+- **DELETE** `/track/:id` - удалить трек
 
-```
-npm run lint
-```
+Конечная точка `/artist`:
 
-```
-npm run format
-```
+- **GET** `/artist` - получить всех артистов
+- **GET** `/artist/:id` - получить данные одного пользователя по id (uuid v4)
+- **POST** `/artist` - создать артиста
 
-### Debugging in VSCode
+Обязательные свойства в теле запроса:
 
-Press <kbd>F5</kbd> to debug.
+`name: string`
+`grammy: boolean`
 
-For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+- **PUT** `/artist/:id` - обновить данные артиста
+- **DELETE** `/artist:id` - удалить артиста
+
+Конечная точка `/album`:
+
+- **GET** `/album` - получить все альбомы
+- **GET** `/album/:id` - получить данные о одном из альбомов по id (uuid v4)
+- **POST** `/album/` - создать альбом
+
+Обязательные свойства в теле запроса:
+
+`name: string`
+`year: number`
+
+- **PUT** `/album/:id` - обновить данные альбома
+- **DELETE** `/album/:id` - удалить альбом
+
+Конечная точка `/favs`
+
+- **GET** `/favs` - получить данные о избранных треках, артистах, альбомах
+- **POST** `/favs/track/:id` - добавить трек в избранное
+- **DELETE** `/favs/track/:id` - удалить трек из избранного
+- **POST** `/favs/album/:id` - добавить альбом в избранное
+- **DELETE** `/favs/album/:id` - удалить альбом из избранного
+- **POST** `/favs/artist/:id` - добавить артиста в избранное
+- **DELETE** `/favs/artist/:id` - удалить артиста из избранного
+
+## Тестирование приложения:
+
+Приложение имеет следующие консольные команды позволяющие произвести тестирование приложения:
+
+`npm run test` - Запустить все имеющиеся тесты
+`npm run test -- <Путь к тест кейсу>` - Запустить отдельный набор тестов
+
+### Форматирование кода:
+
+Приложение имеет следующие консольные команды позволяющие произвести форматирование кода приложения:
+
+`npm run lint` - проверить код посредством линтера
+`npm run format` - отформатировать код
+
+## Контакты:
+
+В случае необходимости получения дополнительной информации, и/или каких либо разъяснений по логике работы приложения можете связаться со мной:
+
+- Discord: `ch1rik#2995`
+- Email: `vladislav@cheremis.in`
+
+**Приятного пользования!**
