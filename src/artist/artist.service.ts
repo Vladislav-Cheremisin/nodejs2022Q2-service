@@ -1,9 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { CreateArtistDto } from './dto/create-artist.dto';
+import { UpdateArtistDto } from './dto/update-artist.dto';
 import { database } from 'src/database';
 import { Artist } from 'src/interfaces';
 import * as uuid from 'uuid';
-import { CreateArtistDto } from './dto/create-artist.dto';
-import { UpdateArtistDto } from './dto/update-artist.dto';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ArtistService {
@@ -62,7 +62,7 @@ export class ArtistService {
       if (dbArtist.id === id) {
         if (typeof updateArtistDto.name === 'string') {
           dbArtist.name = updateArtistDto.name;
-          artist.name = updateArtistDto.name;
+          artist.name = dbArtist.name;
         }
 
         if (typeof updateArtistDto.grammy === 'boolean') {

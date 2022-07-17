@@ -72,7 +72,7 @@ export class TrackService {
       if (dbTrack.id === id) {
         if (typeof updateTrackDto.name === 'string') {
           dbTrack.name = updateTrackDto.name;
-          track.name = updateTrackDto.name;
+          track.name = dbTrack.name;
         }
 
         if (typeof updateTrackDto.duration === 'number') {
