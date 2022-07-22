@@ -1,0 +1,7 @@
+version: '3.7'
+services:
+  nodejs-service:
+    image: nodejs-service
+    build: .
+    ports:
+      - '4000:4000'
