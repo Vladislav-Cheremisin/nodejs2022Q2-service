@@ -22,8 +22,8 @@
     "docker:build": "docker-compose up -d --build",
     "docker:start": "docker-compose start",
     "docker:stop": "docker-compose stop",
-    "docker:scan-service": "docker scan nodejs-service",
-    "docker:scan-db": "docker scan nodejs-service-postgres"
+    "docker:scan-app": "docker scan nodejs-service",
+    "docker:scan-db": "docker scan postgres-database"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",
