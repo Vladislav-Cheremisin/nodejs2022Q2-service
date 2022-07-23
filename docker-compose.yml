@@ -3,7 +3,7 @@ services:
   db:
     container_name: nodejs-service-postgres
     image: postgres:14.4-alpine
-    restart: always
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=${TYPEORM_USERNAME}
       - POSTGRES_PASSWORD=${TYPEORM_PASSWORD}
@@ -12,6 +12,8 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       - ${TYPEORM_PORT}:${TYPEORM_PORT}
+    networks:
+      - nodejs-service-net
   nodejs-service:
     container_name: nodejs-service
     build:
@@ -29,3 +31,10 @@ services:
       - TYPEORM_DATABASE=${TYPEORM_DATABASE}
       - TYPEORM_PORT=${TYPEORM_PORT}
       - TYPEORM_HOST=db
+    networks:
+      - nodejs-service-net
+
+networks:
+  nodejs-service-net:
+    name: nodejs-service-net
+    driver: bridge
