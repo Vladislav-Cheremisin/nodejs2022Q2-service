@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=${TYPEORM_PASSWORD}
       - POSTGRES_DB=${TYPEORM_DATABASE}
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     ports:
       - ${TYPEORM_PORT}:${TYPEORM_PORT}
     networks:
@@ -36,6 +36,9 @@ services:
       - TYPEORM_HOST=db
     networks:
       - nodejs-service-net
+
+volumes:
+  pgdata:
 
 networks:
   nodejs-service-net:
