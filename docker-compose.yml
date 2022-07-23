@@ -13,7 +13,19 @@ services:
     ports:
       - ${TYPEORM_PORT}:${TYPEORM_PORT}
   nodejs-service:
-    image: nodejs-service
-    build: .
+    container_name: nodejs-service
+    build:
+      context: ./
+    depends_on:
+      - db
+    restart: unless-stopped
     ports:
-      - '4000:4000'
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - TYPEORM_CONNECTION=${TYPEORM_CONNECTION}
+      - TYPEORM_USERNAME=${TYPEORM_USERNAME}
+      - TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
+      - TYPEORM_DATABASE=${TYPEORM_DATABASE}
+      - TYPEORM_PORT=${TYPEORM_PORT}
+      - TYPEORM_HOST=db
