@@ -2,6 +2,6 @@ import { Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('fav-tracks')
 export class FavTrackEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 }

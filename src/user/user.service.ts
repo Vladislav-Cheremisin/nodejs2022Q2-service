@@ -1,48 +1,31 @@
 import { User, UserResponse } from 'src/interfaces';
-import { database } from 'src/database';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as uuid from 'uuid';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserEntity } from './entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
-  getUsers(): string {
-    const parsedUsers: UserResponse[] = [];
+  constructor(
+    @InjectRepository(UserEntity)
+    private userRepo: Repository<UserEntity>,
+  ) {}
 
-    database.userDatabase.forEach((user: User) => {
-      const parsedUser: UserResponse = {
-        id: user.id,
-        login: user.login,
-        version: user.version,
-        updatedAt: user.updatedAt,
-        createdAt: user.createdAt,
-      };
-
-      parsedUsers.push(parsedUser);
-    });
-
-    return JSON.stringify(parsedUsers);
+  async getUsers(): Promise<UserEntity[]> {
+    return this.userRepo.find();
   }
 
-  getUser(id: string): string {
+  async getUser(id: string): Promise<Partial<UserEntity>> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect user ID', HttpStatus.BAD_REQUEST);
     }
 
     let result: null | UserResponse = null;
 
-    database.userDatabase.forEach((user) => {
-      if (user.id === id) {
-        result = {
-          id: user.id,
-          login: user.login,
-          version: user.version,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        };
-      }
-    });
+    result = await this.userRepo.findOneBy({ id: id });
 
     if (result === null) {
       throw new HttpException(
@@ -50,41 +33,30 @@ export class UserService {
         HttpStatus.NOT_FOUND,
       );
     } else {
-      return JSON.stringify(result);
+      return result;
     }
   }
 
-  createUser(createUserDto: CreateUserDto): string {
+  async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
     if (
       typeof createUserDto.login === 'string' &&
       typeof createUserDto.password === 'string'
     ) {
-      const timeStamp: number = Date.now();
-      const user: User = {
-        id: uuid.v4(),
-        login: createUserDto.login,
-        password: createUserDto.password,
-        version: 1,
-        createdAt: timeStamp,
-        updatedAt: timeStamp,
-      };
+      const user = new UserEntity();
 
-      const userResponse: UserResponse = {
-        id: user.id,
-        login: user.login,
-        version: user.version,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      };
+      user.login = createUserDto.login;
+      user.password = createUserDto.password;
 
-      database.userDatabase.push(user);
-      return JSON.stringify(userResponse);
+      return this.userRepo.save(user);
     } else {
       throw new HttpException('incorrect request body', HttpStatus.BAD_REQUEST);
     }
   }
 
-  updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): string {
+  async updatePassword(
+    updatePasswordDto: UpdatePasswordDto,
+    id: string,
+  ): Promise<Partial<UserEntity>> {
     if (
       !updatePasswordDto ||
       !updatePasswordDto.oldPassword ||
@@ -99,11 +71,7 @@ export class UserService {
 
     let foundedUser: User | null = null;
 
-    database.userDatabase.forEach((user) => {
-      if (user.id === id) {
-        foundedUser = user;
-      }
-    });
+    foundedUser = await this.userRepo.findOneBy({ id: id });
 
     if (foundedUser) {
       if (
@@ -111,15 +79,13 @@ export class UserService {
         typeof updatePasswordDto.newPassword === 'string' &&
         updatePasswordDto.oldPassword === foundedUser.password
       ) {
-        foundedUser.password = updatePasswordDto.newPassword;
-        foundedUser.version += 1;
-        foundedUser.updatedAt = Date.now();
+        const updatedData: Partial<UserEntity> = {
+          password: updatePasswordDto.newPassword,
+        };
 
-        const response = Object.assign({}, foundedUser);
+        await this.userRepo.update(id, updatedData);
 
-        delete response.password;
-
-        return JSON.stringify(response);
+        return await this.userRepo.findOneBy({ id: id });
       } else {
         throw new HttpException(
           `Wrong old password or incorrect body data`,
@@ -134,26 +100,22 @@ export class UserService {
     }
   }
 
-  deleteUser(id: string): void {
+  async deleteUser(id: string): Promise<void> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect user ID', HttpStatus.BAD_REQUEST);
     }
 
-    let userExists = false;
+    let user = null;
 
-    for (let i = 0; i < database.userDatabase.length; i++) {
-      if (database.userDatabase[i].id === id) {
-        database.userDatabase.splice(i, 1);
+    user = await this.userRepo.findOneBy({ id: id });
 
-        userExists = true;
-      }
-    }
-
-    if (!userExists) {
+    if (!user) {
       throw new HttpException(
         'User with entered id not found',
         HttpStatus.NOT_FOUND,
       );
+    } else {
+      this.userRepo.delete(id);
     }
   }
 }
