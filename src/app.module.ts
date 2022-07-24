@@ -12,8 +12,8 @@ import { AppDataSource } from 'ormconfig';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync(AppDataSource.options),
+    ConfigModule.forRoot(),
+    TypeOrmModule.forRoot(AppDataSource.options),
     UserModule,
     TrackModule,
     ArtistModule,

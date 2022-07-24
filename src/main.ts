@@ -15,7 +15,10 @@ async function bootstrap() {
   const port = config.get<number>('PORT');
 
   const rootDir = dirname(__dirname);
-  const docs = await readFile(join(rootDir, 'doc', 'api.yaml'), 'utf-8');
+  const docs = await readFile(
+    join(dirname(rootDir), 'doc', 'api.yaml'),
+    'utf-8',
+  );
   const parsedDocs = parse(docs);
 
   SwaggerModule.setup('/', app, parsedDocs);
