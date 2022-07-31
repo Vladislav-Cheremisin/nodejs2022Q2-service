@@ -16,14 +16,14 @@ export class FavAlbumController {
   @Post(':id')
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-type', 'application/json')
-  addAlbumToFav(@Param('id') id: string): string {
-    return this.favAlbumService.addAlbumToFav(id);
+  async addAlbumToFav(@Param('id') id: string): Promise<string> {
+    return await this.favAlbumService.addAlbumToFav(id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header('Content-type', 'application/json')
-  removeAlbumFromFav(@Param('id') id: string) {
-    return this.favAlbumService.removeAlbumFromFav(id);
+  async removeAlbumFromFav(@Param('id') id: string) {
+    return await this.favAlbumService.removeAlbumFromFav(id);
   }
 }

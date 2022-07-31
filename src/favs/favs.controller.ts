@@ -7,7 +7,7 @@ export class FavsController {
 
   @Get()
   @Header('Content-type', 'application/json')
-  getFavs(): string {
-    return this.favsService.getFavs();
+  async getFavs(): Promise<string> {
+    return await this.favsService.getFavs();
   }
 }

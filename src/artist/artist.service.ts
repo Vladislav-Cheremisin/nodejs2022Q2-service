@@ -1,28 +1,34 @@
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
-import { database } from 'src/database';
 import { Artist } from 'src/interfaces';
 import * as uuid from 'uuid';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ArtistEntity } from './entities/artist.entity';
+import { Repository } from 'typeorm';
+import { FavArtistEntity } from 'src/favs/fav-artist/entities/fav-artist.entity';
 
 @Injectable()
 export class ArtistService {
-  getArtists(): string {
-    return JSON.stringify(database.artistDatabase);
+  constructor(
+    @InjectRepository(ArtistEntity)
+    private artistRepo: Repository<ArtistEntity>,
+    @InjectRepository(FavArtistEntity)
+    private favArtistRepo: Repository<FavArtistEntity>,
+  ) {}
+
+  async getArtists(): Promise<ArtistEntity[]> {
+    return await this.artistRepo.find();
   }
 
-  getArtist(id: string): string {
+  async getArtist(id: string): Promise<ArtistEntity> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect artist ID', HttpStatus.BAD_REQUEST);
     }
 
-    let result: null | Artist = null;
+    let result: null | ArtistEntity = null;
 
-    database.artistDatabase.forEach((artist) => {
-      if (artist.id === id) {
-        result = artist;
-      }
-    });
+    result = await this.artistRepo.findOneBy({ id: id });
 
     if (result === null) {
       throw new HttpException(
@@ -30,11 +36,11 @@ export class ArtistService {
         HttpStatus.NOT_FOUND,
       );
     } else {
-      return JSON.stringify(result);
+      return result;
     }
   }
 
-  createArtist(createArtistDto: CreateArtistDto): string {
+  async createArtist(createArtistDto: CreateArtistDto): Promise<ArtistEntity> {
     if (
       typeof createArtistDto.name === 'string' &&
       typeof createArtistDto.grammy === 'boolean'
@@ -45,8 +51,9 @@ export class ArtistService {
         grammy: createArtistDto.grammy,
       };
 
-      database.artistDatabase.push(artist);
-      return JSON.stringify(artist);
+      const dbArtist = this.artistRepo.create(artist);
+
+      return await this.artistRepo.save(dbArtist);
     } else {
       throw new HttpException(
         'incorrect request body, fields name and duration are required',
@@ -55,74 +62,42 @@ export class ArtistService {
     }
   }
 
-  updateArtist(updateArtistDto: UpdateArtistDto, id: string): string {
-    const artist = JSON.parse(this.getArtist(id));
+  async updateArtist(
+    updateArtistDto: UpdateArtistDto,
+    id: string,
+  ): Promise<ArtistEntity> {
+    await this.getArtist(id);
 
-    database.artistDatabase.forEach((dbArtist) => {
-      if (dbArtist.id === id) {
-        if (typeof updateArtistDto.name === 'string') {
-          dbArtist.name = updateArtistDto.name;
-          artist.name = dbArtist.name;
-        } else {
-          throw new HttpException(
-            'Incorrect name in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
+    if (typeof updateArtistDto.name !== 'string') {
+      throw new HttpException(
+        'Incorrect name in request body',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-        if (typeof updateArtistDto.grammy === 'boolean') {
-          dbArtist.grammy = updateArtistDto.grammy;
-          artist.grammy = dbArtist.grammy;
-        } else {
-          throw new HttpException(
-            'Incorrect grammy data in request body, use true or false',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      }
-    });
+    if (typeof updateArtistDto.grammy !== 'boolean') {
+      throw new HttpException(
+        'Incorrect grammy data in request body, use true or false',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-    return JSON.stringify(artist);
+    await this.artistRepo.update(id, updateArtistDto);
+
+    return this.artistRepo.findOneBy({ id: id });
   }
 
-  deleteArtist(id: string): void {
-    if (!uuid.validate(id)) {
-      throw new HttpException('Incorrect artist ID', HttpStatus.BAD_REQUEST);
-    }
+  async deleteArtist(id: string): Promise<void> {
+    await this.getArtist(id);
 
-    let artistExists = false;
+    this.artistRepo.delete(id);
 
-    for (let i = 0; i < database.artistDatabase.length; i++) {
-      if (database.artistDatabase[i].id === id) {
-        database.artistDatabase.splice(i, 1);
+    let artistInFavs: null | Partial<ArtistEntity> = null;
 
-        artistExists = true;
-      }
-    }
+    artistInFavs = await this.favArtistRepo.findOneBy({ id: id });
 
-    database.trackDatabase.forEach((track) => {
-      if (track.artistId === id) {
-        track.artistId = null;
-      }
-    });
-
-    database.albumDatabase.forEach((album) => {
-      if (album.artistId === id) {
-        album.artistId = null;
-      }
-    });
-
-    database.favorites.artists.forEach((trackId, index) => {
-      if (trackId === id) {
-        database.favorites.artists.splice(index, 1);
-      }
-    });
-
-    if (!artistExists) {
-      throw new HttpException(
-        'Artist with entered id not found',
-        HttpStatus.NOT_FOUND,
-      );
+    if (artistInFavs) {
+      await this.favArtistRepo.delete(id);
     }
   }
 }

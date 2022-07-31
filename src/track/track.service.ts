@@ -1,28 +1,40 @@
 import { Track } from 'src/interfaces';
-import { database } from 'src/database';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as uuid from 'uuid';
+import { InjectRepository } from '@nestjs/typeorm';
+import { TrackEntity } from './entities/track.entity';
+import { Repository } from 'typeorm';
+import { AlbumEntity } from 'src/album/entities/album.entity';
+import { ArtistEntity } from 'src/artist/entities/artist.entity';
+import { FavTrackEntity } from 'src/favs/fav-track/entities/fav-track.entity';
 
 @Injectable()
 export class TrackService {
-  getTracks(): string {
-    return JSON.stringify(database.trackDatabase);
+  constructor(
+    @InjectRepository(TrackEntity)
+    private trackRepo: Repository<TrackEntity>,
+    @InjectRepository(ArtistEntity)
+    private artistRepo: Repository<ArtistEntity>,
+    @InjectRepository(AlbumEntity)
+    private albumRepo: Repository<AlbumEntity>,
+    @InjectRepository(FavTrackEntity)
+    private favTracksRepo: Repository<FavTrackEntity>,
+  ) {}
+
+  async getTracks(): Promise<TrackEntity[]> {
+    return await this.trackRepo.find();
   }
 
-  getTrack(id: string): string {
+  async getTrack(id: string): Promise<TrackEntity> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect track ID', HttpStatus.BAD_REQUEST);
     }
 
-    let result: null | Track = null;
+    let result: null | TrackEntity = null;
 
-    database.trackDatabase.forEach((track) => {
-      if (track.id === id) {
-        result = track;
-      }
-    });
+    result = await this.trackRepo.findOneBy({ id: id });
 
     if (result === null) {
       throw new HttpException(
@@ -30,16 +42,16 @@ export class TrackService {
         HttpStatus.NOT_FOUND,
       );
     } else {
-      return JSON.stringify(result);
+      return result;
     }
   }
 
-  createTrack(CreateTrackDto: CreateTrackDto): string {
+  async createTrack(CreateTrackDto: CreateTrackDto): Promise<TrackEntity> {
     if (
       typeof CreateTrackDto.name === 'string' &&
       typeof CreateTrackDto.duration === 'number'
     ) {
-      const result: Track = {
+      const track: Track = {
         id: uuid.v4(),
         name: CreateTrackDto.name,
         artistId: null,
@@ -48,15 +60,30 @@ export class TrackService {
       };
 
       if (typeof CreateTrackDto.albumId === 'string') {
-        result.albumId = CreateTrackDto.albumId;
+        let album = null;
+
+        album = await this.albumRepo.findOneBy({
+          id: CreateTrackDto.albumId,
+        });
+
+        if (album) {
+          track.albumId = CreateTrackDto.albumId;
+        }
       }
 
       if (typeof CreateTrackDto.artistId === 'string') {
-        result.artistId = CreateTrackDto.artistId;
+        let artist = null;
+
+        artist = await this.artistRepo.findOneBy({
+          id: CreateTrackDto.artistId,
+        });
+
+        if (artist) {
+          track.artistId = CreateTrackDto.artistId;
+        }
       }
 
-      database.trackDatabase.push(result);
-      return JSON.stringify(result);
+      return await this.trackRepo.save(track);
     } else {
       throw new HttpException(
         'incorrect request body, fields name and duration are required',
@@ -65,88 +92,95 @@ export class TrackService {
     }
   }
 
-  updateTrack(updateTrackDto: UpdateTrackDto, id: string): string {
-    const track = JSON.parse(this.getTrack(id));
+  async updateTrack(
+    updateTrackDto: UpdateTrackDto,
+    id: string,
+  ): Promise<TrackEntity> {
+    await this.getTrack(id);
 
-    database.trackDatabase.forEach((dbTrack) => {
-      if (dbTrack.id === id) {
-        if (typeof updateTrackDto.name === 'string') {
-          dbTrack.name = updateTrackDto.name;
-          track.name = dbTrack.name;
-        } else {
-          throw new HttpException(
-            'Incorrect name in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
+    const updateData: Partial<TrackEntity> = {};
 
-        if (typeof updateTrackDto.duration === 'number') {
-          dbTrack.duration = updateTrackDto.duration;
-          track.duration = dbTrack.duration;
-        } else {
-          throw new HttpException(
-            'Incorrect duration in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (
-          uuid.validate(updateTrackDto.albumId) ||
-          updateTrackDto.albumId === null
-        ) {
-          dbTrack.albumId = updateTrackDto.albumId;
-          track.albumId = dbTrack.albumId;
-        } else {
-          throw new HttpException(
-            'Incorrect album ID in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (
-          uuid.validate(updateTrackDto.artistId) ||
-          updateTrackDto.artistId === null
-        ) {
-          dbTrack.artistId = updateTrackDto.artistId;
-          track.artistId = dbTrack.artistId;
-        } else {
-          throw new HttpException(
-            'Incorrect artist ID in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
+    if (updateTrackDto.name) {
+      if (typeof updateTrackDto.name === 'string') {
+        updateData.name = updateTrackDto.name;
+      } else {
+        throw new HttpException(
+          'Incorrect name in request body',
+          HttpStatus.BAD_REQUEST,
+        );
       }
-    });
+    }
 
-    return JSON.stringify(track);
+    if (updateTrackDto.duration) {
+      if (typeof updateTrackDto.duration === 'number') {
+        updateData.duration = updateTrackDto.duration;
+      } else {
+        throw new HttpException(
+          'Incorrect duration in request body',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    if (updateTrackDto.artistId) {
+      let artist: null | ArtistEntity = null;
+
+      artist = await this.artistRepo.findOneBy({ id: updateTrackDto.artistId });
+
+      if (artist || updateTrackDto.artistId === null) {
+        updateData.artistId = updateTrackDto.artistId;
+      } else {
+        throw new HttpException(
+          'Incorrect artist ID in request body',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    if (updateTrackDto.albumId) {
+      let album: null | AlbumEntity = null;
+
+      album = await this.albumRepo.findOneBy({ id: updateTrackDto.artistId });
+
+      if (album || updateTrackDto.albumId === null) {
+        updateData.albumId = updateTrackDto.albumId;
+      } else {
+        throw new HttpException(
+          'Incorrect album ID in request body',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    await this.trackRepo.update(id, updateData);
+
+    return await this.trackRepo.findOneBy({ id: id });
   }
 
-  deleteTrack(id: string): void {
+  async deleteTrack(id: string): Promise<void> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect track ID', HttpStatus.BAD_REQUEST);
     }
 
-    let trackExists = false;
+    let track: null | TrackEntity = null;
 
-    for (let i = 0; i < database.trackDatabase.length; i++) {
-      if (database.trackDatabase[i].id === id) {
-        database.trackDatabase.splice(i, 1);
+    track = await this.trackRepo.findOneBy({ id: id });
 
-        trackExists = true;
-
-        database.favorites.tracks.forEach((trackId, index) => {
-          if (trackId === id) {
-            database.favorites.tracks.splice(index, 1);
-          }
-        });
-      }
-    }
-
-    if (!trackExists) {
+    if (!track) {
       throw new HttpException(
         'Track with entered id not found',
         HttpStatus.NOT_FOUND,
       );
+    } else {
+      await this.trackRepo.delete(id);
+
+      let trackInFavs: null | Partial<TrackEntity> = null;
+
+      trackInFavs = await this.favTracksRepo.findOneBy({ id: id });
+
+      if (trackInFavs) {
+        await this.favTracksRepo.delete(id);
+      }
     }
   }
 }

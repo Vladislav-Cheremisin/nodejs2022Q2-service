@@ -109,13 +109,13 @@ export class UserService {
 
     user = await this.userRepo.findOneBy({ id: id });
 
-    if (!user) {
+    if (user !== null) {
+      this.userRepo.delete(id);
+    } else {
       throw new HttpException(
         'User with entered id not found',
         HttpStatus.NOT_FOUND,
       );
-    } else {
-      this.userRepo.delete(id);
     }
   }
 }
