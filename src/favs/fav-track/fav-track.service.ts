@@ -1,37 +1,49 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as uuid from 'uuid';
-import { database } from 'src/database';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FavTrackEntity } from './entities/fav-track.entity';
+import { TrackEntity } from 'src/track/entities/track.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class FavTrackService {
-  addTrackToFav(id: string): string {
+  constructor(
+    @InjectRepository(FavTrackEntity)
+    private favTrackRepo: Repository<FavTrackEntity>,
+    @InjectRepository(TrackEntity)
+    private trackRepo: Repository<TrackEntity>,
+  ) {}
+
+  async addTrackToFav(id: string): Promise<string> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect track ID', HttpStatus.BAD_REQUEST);
     }
 
-    database.favorites.tracks.forEach((trackId) => {
-      if (trackId === id) {
+    let track: null | TrackEntity = null;
+
+    track = await this.trackRepo.findOneBy({ id: id });
+
+    if (track) {
+      let trackInFavs: Partial<TrackEntity> | null = null;
+
+      trackInFavs = await this.favTrackRepo.findOneBy({ id: id });
+
+      if (trackInFavs) {
         throw new HttpException(
           'Track with entered ID already exists in favorites list',
           HttpStatus.FORBIDDEN,
         );
+      } else {
+        const newId = {
+          id: id,
+        };
+
+        await this.favTrackRepo.save(newId);
+
+        return JSON.stringify({
+          message: 'Success! Track was added to favorites',
+        });
       }
-    });
-
-    let found = false;
-
-    database.trackDatabase.forEach((dbTrack) => {
-      if (dbTrack.id === id) {
-        found = true;
-
-        database.favorites.tracks.push(id);
-      }
-    });
-
-    if (found) {
-      return JSON.stringify({
-        message: 'Success! Track was added to favorites',
-      });
     } else {
       throw new HttpException(
         `Track with entered ID doesn't exist`,
@@ -40,22 +52,18 @@ export class FavTrackService {
     }
   }
 
-  removeTrackFromFav(id: string): void {
+  async removeTrackFromFav(id: string): Promise<void> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect track ID', HttpStatus.BAD_REQUEST);
     }
 
-    let deleted = false;
+    let track: null | Partial<TrackEntity> = null;
 
-    database.favorites.tracks.forEach((trackId, index) => {
-      if (trackId === id) {
-        database.favorites.tracks.splice(index, 1);
+    track = await this.favTrackRepo.findOneBy({ id: id });
 
-        deleted = true;
-      }
-    });
-
-    if (!deleted) {
+    if (track) {
+      await this.favTrackRepo.delete(id);
+    } else {
       throw new HttpException(
         `Track with entered id doesn't exist in favorites list`,
         HttpStatus.NOT_FOUND,

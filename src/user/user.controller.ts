@@ -3,6 +3,7 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserService } from './user.service';
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -12,44 +13,50 @@ import {
   Param,
   Post,
   Put,
+  UseInterceptors,
 } from '@nestjs/common';
+import { UserEntity } from './entities/user.entity';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get()
   @Header('Content-type', 'application/json')
-  getUsers(): string {
-    return this.userService.getUsers();
+  async getUsers(): Promise<UserEntity[]> {
+    return await this.userService.getUsers();
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get(':id')
   @Header('Content-type', 'application/json')
-  getUser(@Param('id') id: string): string {
-    return this.userService.getUser(id);
+  async getUser(@Param('id') id: string): Promise<Partial<UserEntity>> {
+    return await this.userService.getUser(id);
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-type', 'application/json')
-  createUser(@Body() createUserDto: CreateUserDto): string {
-    return this.userService.createUser(createUserDto);
+  async createUser(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+    return await this.userService.createUser(createUserDto);
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Put(':id')
   @Header('Content-type', 'application/json')
-  updatePassword(
+  async updatePassword(
     @Body() updatePasswordDto: UpdatePasswordDto,
     @Param('id') id: string,
-  ): string {
-    return this.userService.updatePassword(updatePasswordDto, id);
+  ): Promise<Partial<UserEntity>> {
+    return await this.userService.updatePassword(updatePasswordDto, id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header('Content-type', 'application/json')
-  deleteUser(@Param('id') id: string) {
-    return this.userService.deleteUser(id);
+  async deleteUser(@Param('id') id: string): Promise<void> {
+    return await this.userService.deleteUser(id);
   }
 }

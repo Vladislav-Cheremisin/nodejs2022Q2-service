@@ -16,14 +16,14 @@ export class FavTrackController {
   @Post(':id')
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-type', 'application/json')
-  addTrackToFav(@Param('id') id: string): string {
-    return this.favTrackService.addTrackToFav(id);
+  async addTrackToFav(@Param('id') id: string): Promise<string> {
+    return await this.favTrackService.addTrackToFav(id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header('Content-type', 'application/json')
-  removeTrackFromFav(@Param('id') id: string) {
-    return this.favTrackService.removeTrackFromFav(id);
+  async removeTrackFromFav(@Param('id') id: string) {
+    return await this.favTrackService.removeTrackFromFav(id);
   }
 }

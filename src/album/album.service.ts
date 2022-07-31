@@ -1,28 +1,37 @@
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { database } from 'src/database';
 import { Album } from 'src/interfaces';
 import * as uuid from 'uuid';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AlbumEntity } from './entities/album.entity';
+import { Repository } from 'typeorm';
+import { ArtistEntity } from 'src/artist/entities/artist.entity';
+import { FavAlbumEntity } from 'src/favs/fav-album/entities/fav-album.entity';
 
 @Injectable()
 export class AlbumService {
-  getAlbums(): string {
-    return JSON.stringify(database.albumDatabase);
+  constructor(
+    @InjectRepository(AlbumEntity)
+    private albumRepo: Repository<AlbumEntity>,
+    @InjectRepository(ArtistEntity)
+    private artistRepo: Repository<ArtistEntity>,
+    @InjectRepository(FavAlbumEntity)
+    private favAlbumsRepo: Repository<FavAlbumEntity>,
+  ) {}
+
+  async getAlbums(): Promise<AlbumEntity[]> {
+    return await this.albumRepo.find();
   }
 
-  getAlbum(id: string): string {
+  async getAlbum(id: string): Promise<AlbumEntity> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect album ID', HttpStatus.BAD_REQUEST);
     }
 
-    let result: null | Album = null;
+    let result: null | AlbumEntity = null;
 
-    database.albumDatabase.forEach((album) => {
-      if (album.id === id) {
-        result = album;
-      }
-    });
+    result = await this.albumRepo.findOneBy({ id: id });
 
     if (result === null) {
       throw new HttpException(
@@ -30,11 +39,11 @@ export class AlbumService {
         HttpStatus.NOT_FOUND,
       );
     } else {
-      return JSON.stringify(result);
+      return result;
     }
   }
 
-  createAlbum(createAlbumDto: CreateAlbumDto): string {
+  async createAlbum(createAlbumDto: CreateAlbumDto): Promise<AlbumEntity> {
     if (
       typeof createAlbumDto.name === 'string' &&
       typeof createAlbumDto.year === 'number'
@@ -47,11 +56,18 @@ export class AlbumService {
       };
 
       if (typeof createAlbumDto.artistId === 'string') {
-        album.artistId = createAlbumDto.artistId;
+        let artist = null;
+
+        artist = await this.artistRepo.findOneBy({
+          id: createAlbumDto.artistId,
+        });
+
+        if (artist) {
+          album.artistId = createAlbumDto.artistId;
+        }
       }
 
-      database.albumDatabase.push(album);
-      return JSON.stringify(album);
+      return await this.albumRepo.save(album);
     } else {
       throw new HttpException(
         'incorrect request body, fields name and duration are required',
@@ -60,81 +76,80 @@ export class AlbumService {
     }
   }
 
-  updateAlbum(updateAlbumDto: UpdateAlbumDto, id: string): string {
-    const album = JSON.parse(this.getAlbum(id));
+  async updateAlbum(
+    updateAlbumDto: UpdateAlbumDto,
+    id: string,
+  ): Promise<AlbumEntity> {
+    await this.getAlbum(id);
 
-    database.albumDatabase.forEach((dbAlbum) => {
-      if (dbAlbum.id === id) {
-        if (typeof updateAlbumDto.name === 'string') {
-          dbAlbum.name = updateAlbumDto.name;
-          album.name = dbAlbum.name;
-        } else {
-          throw new HttpException(
-            'Incorrect ID in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
+    const updateData: Partial<AlbumEntity> = {};
 
-        if (typeof updateAlbumDto.year === 'number') {
-          dbAlbum.year = updateAlbumDto.year;
-          album.year = dbAlbum.year;
-        } else {
-          throw new HttpException(
-            'Incorrect year in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (
-          uuid.validate(updateAlbumDto.artistId) ||
-          updateAlbumDto.artistId === null
-        ) {
-          dbAlbum.artistId = updateAlbumDto.artistId;
-          album.artistId = dbAlbum.artistId;
-        } else {
-          throw new HttpException(
-            'Incorrect artist ID in request body',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
+    if (updateAlbumDto.name) {
+      if (typeof updateAlbumDto.name === 'string') {
+        updateData.name = updateAlbumDto.name;
+      } else {
+        throw new HttpException(
+          'Incorrect name in request body',
+          HttpStatus.BAD_REQUEST,
+        );
       }
-    });
+    }
 
-    return JSON.stringify(album);
+    if (updateAlbumDto.year) {
+      if (typeof updateAlbumDto.year === 'number') {
+        updateData.year = updateAlbumDto.year;
+      } else {
+        throw new HttpException(
+          'Incorrect year in request body',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    if (updateAlbumDto.artistId) {
+      let artist: null | ArtistEntity = null;
+
+      artist = await this.artistRepo.findOneBy({ id: updateAlbumDto.artistId });
+
+      if (artist || updateAlbumDto.artistId === null) {
+        updateData.artistId = updateAlbumDto.artistId;
+      } else {
+        throw new HttpException(
+          'Incorrect artist ID in request body',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    await this.albumRepo.update(id, updateData);
+
+    return await this.albumRepo.findOneBy({ id: id });
   }
 
-  deleteAlbum(id: string): void {
+  async deleteAlbum(id: string): Promise<void> {
     if (!uuid.validate(id)) {
       throw new HttpException('Incorrect album ID', HttpStatus.BAD_REQUEST);
     }
 
-    let albumExists = false;
+    let album = null;
 
-    for (let i = 0; i < database.albumDatabase.length; i++) {
-      if (database.albumDatabase[i].id === id) {
-        database.albumDatabase.splice(i, 1);
+    album = await this.albumRepo.findOneBy({ id: id });
 
-        albumExists = true;
-
-        database.trackDatabase.forEach((track) => {
-          if (track.albumId === id) {
-            track.albumId = null;
-          }
-        });
-
-        database.favorites.albums.forEach((albumId, index) => {
-          if (albumId === id) {
-            database.favorites.albums.splice(index, 1);
-          }
-        });
-      }
-    }
-
-    if (!albumExists) {
+    if (!album) {
       throw new HttpException(
         'Album with entered id not found',
         HttpStatus.NOT_FOUND,
       );
+    } else {
+      await this.albumRepo.delete(id);
+
+      let albumInFavs: null | Partial<AlbumEntity> = null;
+
+      albumInFavs = await this.favAlbumsRepo.findOneBy({ id: id });
+
+      if (albumInFavs) {
+        await this.favAlbumsRepo.delete(id);
+      }
     }
   }
 }

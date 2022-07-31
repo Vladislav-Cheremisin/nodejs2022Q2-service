@@ -1,39 +1,59 @@
 import { Injectable } from '@nestjs/common';
-import { database } from 'src/database';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AlbumEntity } from 'src/album/entities/album.entity';
+import { ArtistEntity } from 'src/artist/entities/artist.entity';
 import { FavoritesResponse } from 'src/interfaces';
+import { TrackEntity } from 'src/track/entities/track.entity';
+import { Repository } from 'typeorm';
+import { FavAlbumEntity } from './fav-album/entities/fav-album.entity';
+import { FavArtistEntity } from './fav-artist/entities/fav-artist.entity';
+import { FavTrackEntity } from './fav-track/entities/fav-track.entity';
 
 @Injectable()
 export class FavsService {
-  getFavs(): string {
+  constructor(
+    @InjectRepository(FavArtistEntity)
+    private favArtistRepo: Repository<FavArtistEntity>,
+    @InjectRepository(FavAlbumEntity)
+    private favAlbumRepo: Repository<FavAlbumEntity>,
+    @InjectRepository(FavTrackEntity)
+    private favTrackRepo: Repository<FavTrackEntity>,
+    @InjectRepository(ArtistEntity)
+    private artistRepo: Repository<ArtistEntity>,
+    @InjectRepository(AlbumEntity)
+    private albumRepo: Repository<AlbumEntity>,
+    @InjectRepository(TrackEntity)
+    private TrackRepo: Repository<TrackEntity>,
+  ) {}
+
+  async getFavs(): Promise<string> {
     const response: FavoritesResponse = {
       artists: [],
       albums: [],
       tracks: [],
     };
 
-    database.favorites.artists.forEach((artistId) => {
-      database.artistDatabase.forEach((artist) => {
-        if (artist.id === artistId) {
-          response.artists.push(artist);
-        }
-      });
-    });
+    const artists = await this.favArtistRepo.find();
+    const albums = await this.favAlbumRepo.find();
+    const tracks = await this.favTrackRepo.find();
 
-    database.favorites.albums.forEach((albumId) => {
-      database.albumDatabase.forEach((album) => {
-        if (album.id === albumId) {
-          response.albums.push(album);
-        }
-      });
-    });
+    for (let i = 0; i < artists.length; i++) {
+      const fullItem = await this.artistRepo.findOneBy({ id: artists[i].id });
 
-    database.favorites.tracks.forEach((trackId) => {
-      database.trackDatabase.forEach((track) => {
-        if (track.id === trackId) {
-          response.tracks.push(track);
-        }
-      });
-    });
+      response.artists.push(fullItem);
+    }
+
+    for (let i = 0; i < albums.length; i++) {
+      const fullItem = await this.albumRepo.findOneBy({ id: albums[i].id });
+
+      response.albums.push(fullItem);
+    }
+
+    for (let i = 0; i < tracks.length; i++) {
+      const fullItem = await this.TrackRepo.findOneBy({ id: tracks[i].id });
+
+      response.tracks.push(fullItem);
+    }
 
     return JSON.stringify(response);
   }

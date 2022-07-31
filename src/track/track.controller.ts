@@ -13,6 +13,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { TrackEntity } from './entities/track.entity';
 
 @Controller('track')
 export class TrackController {
@@ -20,36 +21,38 @@ export class TrackController {
 
   @Get()
   @Header('Content-type', 'application/json')
-  getTracks(): string {
-    return this.trackService.getTracks();
+  async getTracks(): Promise<TrackEntity[]> {
+    return await this.trackService.getTracks();
   }
 
   @Get(':id')
   @Header('Content-type', 'application/json')
-  getTrack(@Param('id') id: string): string {
-    return this.trackService.getTrack(id);
+  async getTrack(@Param('id') id: string): Promise<TrackEntity> {
+    return await this.trackService.getTrack(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-type', 'application/json')
-  createTrack(@Body() createArtistDto: CreateTrackDto): string {
-    return this.trackService.createTrack(createArtistDto);
+  async createTrack(
+    @Body() createArtistDto: CreateTrackDto,
+  ): Promise<TrackEntity> {
+    return await this.trackService.createTrack(createArtistDto);
   }
 
   @Put(':id')
   @Header('Content-type', 'application/json')
-  updateTrack(
+  async updateTrack(
     @Body() updateTrackDto: UpdateTrackDto,
     @Param('id') id: string,
-  ): string {
-    return this.trackService.updateTrack(updateTrackDto, id);
+  ): Promise<TrackEntity> {
+    return await this.trackService.updateTrack(updateTrackDto, id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header('Content-type', 'application/json')
-  deleteTrack(@Param('id') id: string) {
-    return this.trackService.deleteTrack(id);
+  async deleteTrack(@Param('id') id: string) {
+    return await this.trackService.deleteTrack(id);
   }
 }
