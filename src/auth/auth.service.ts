@@ -54,19 +54,6 @@ export class AuthService {
   }
 
   async signUp(dto: SignUpDto): Promise<Tokens> {
-    let userLoginCheck: null | UserEntity = null;
-
-    userLoginCheck = await this.userRepo.findOneBy({
-      login: dto.login,
-    });
-
-    if (userLoginCheck) {
-      throw new HttpException(
-        'User with entered login already exist',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const newUser = this.userRepo.create({
