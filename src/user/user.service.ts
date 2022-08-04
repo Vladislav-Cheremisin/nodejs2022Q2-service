@@ -2,10 +2,11 @@ import { User, UserResponse } from 'src/interfaces';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import * as uuid from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import * as uuid from 'uuid';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -43,9 +44,10 @@ export class UserService {
       typeof createUserDto.password === 'string'
     ) {
       const user = new UserEntity();
+      const userPassword = await bcrypt.hash(createUserDto.password, 10);
 
       user.login = createUserDto.login;
-      user.password = createUserDto.password;
+      user.password = userPassword;
 
       return this.userRepo.save(user);
     } else {
@@ -77,10 +79,18 @@ export class UserService {
       if (
         typeof updatePasswordDto.oldPassword === 'string' &&
         typeof updatePasswordDto.newPassword === 'string' &&
-        updatePasswordDto.oldPassword === foundedUser.password
+        (await bcrypt.compare(
+          updatePasswordDto.oldPassword,
+          foundedUser.password,
+        ))
       ) {
+        const hashedNewPassword = await bcrypt.hash(
+          updatePasswordDto.newPassword,
+          10,
+        );
+
         const updatedData: Partial<UserEntity> = {
-          password: updatePasswordDto.newPassword,
+          password: hashedNewPassword,
         };
 
         await this.userRepo.update(id, updatedData);
