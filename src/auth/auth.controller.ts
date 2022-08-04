@@ -23,8 +23,8 @@ export class AuthController {
 
   @Post('/login')
   @Header('Content-type', 'application/json')
-  async login() {
-    return await this.authService.login();
+  async login(@Body() dto: SignUpDto): Promise<Tokens> {
+    return await this.authService.login(dto);
   }
 
   @Post('/refresh')

@@ -83,8 +83,21 @@ export class AuthService {
     return tokens;
   }
 
-  async login() {
-    return 'nothing';
+  async login(dto: SignUpDto): Promise<Tokens> {
+    const user = await this.userRepo.findOneBy({ login: dto.login });
+
+    if (user && (await bcrypt.compare(dto.password, user.password))) {
+      const tokens = await this.signUser(user.id, user.login);
+
+      await this.saveRefreshTokenHash(user.id, tokens.refreshToken);
+
+      return tokens;
+    } else {
+      throw new HttpException(
+        `Incorrect password, or user with entered login doesn't exist`,
+        HttpStatus.FORBIDDEN,
+      );
+    }
   }
 
   async refresh() {
