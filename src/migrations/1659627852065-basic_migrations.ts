@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class basicMigrations1659294488746 implements MigrationInterface {
-  name = 'basicMigrations1659294488746';
+export class basicMigrations1659627852065 implements MigrationInterface {
+  name = 'basicMigrations1659627852065';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -14,10 +14,10 @@ export class basicMigrations1659294488746 implements MigrationInterface {
       `CREATE TABLE "albums" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "year" integer NOT NULL, "artistId" uuid, CONSTRAINT "PK_838ebae24d2e12082670ffc95d7" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "login" character varying NOT NULL, "password" character varying NOT NULL, "version" integer NOT NULL DEFAULT '1', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "fav-albums" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), CONSTRAINT "PK_138afa02576d993a08dda780980" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "fav-albums" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), CONSTRAINT "PK_138afa02576d993a08dda780980" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "login" character varying NOT NULL, "password" character varying NOT NULL, "refreshTokenHash" character varying, "version" integer NOT NULL DEFAULT '1', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TABLE "fav-artists" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), CONSTRAINT "PK_2edf86e6c55aa696321d86da633" PRIMARY KEY ("id"))`,
@@ -48,8 +48,8 @@ export class basicMigrations1659294488746 implements MigrationInterface {
     );
     await queryRunner.query(`DROP TABLE "fav-tracks"`);
     await queryRunner.query(`DROP TABLE "fav-artists"`);
-    await queryRunner.query(`DROP TABLE "fav-albums"`);
     await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TABLE "fav-albums"`);
     await queryRunner.query(`DROP TABLE "albums"`);
     await queryRunner.query(`DROP TABLE "artists"`);
     await queryRunner.query(`DROP TABLE "tracks"`);

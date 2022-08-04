@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -15,23 +15,25 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signUser(userId: string): Promise<Tokens> {
+  async signUser(userId: string, login: string): Promise<Tokens> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: userId,
+          login: login,
         },
         {
-          secret: 'ChangeIt',
+          secret: process.env.JWT_ACCESS_SECRET,
           expiresIn: 60 * 10,
         },
       ),
       this.jwtService.signAsync(
         {
           sub: userId,
+          login: login,
         },
         {
-          secret: 'ChangeItRt',
+          secret: process.env.JWT_REFRESH_SECRET,
           expiresIn: 60 * 30,
         },
       ),
@@ -43,7 +45,28 @@ export class AuthService {
     };
   }
 
+  async saveRefreshTokenHash(userId: string, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+
+    await this.userRepo.update(userId, {
+      refreshTokenHash: hash,
+    });
+  }
+
   async signUp(dto: SignUpDto): Promise<Tokens> {
+    let userLoginCheck: null | UserEntity = null;
+
+    userLoginCheck = await this.userRepo.findOneBy({
+      login: dto.login,
+    });
+
+    if (userLoginCheck) {
+      throw new HttpException(
+        'User with entered login already exist',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const newUser = this.userRepo.create({
@@ -53,7 +76,9 @@ export class AuthService {
 
     await this.userRepo.save(newUser);
 
-    const tokens = await this.signUser(newUser.id);
+    const tokens = await this.signUser(newUser.id, newUser.login);
+
+    await this.saveRefreshTokenHash(newUser.id, tokens.refreshToken);
 
     return tokens;
   }

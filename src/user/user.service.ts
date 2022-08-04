@@ -43,6 +43,19 @@ export class UserService {
       typeof createUserDto.login === 'string' &&
       typeof createUserDto.password === 'string'
     ) {
+      let userLoginCheck: null | UserEntity = null;
+
+      userLoginCheck = await this.userRepo.findOneBy({
+        login: createUserDto.login,
+      });
+
+      if (userLoginCheck) {
+        throw new HttpException(
+          'User with entered login already exist',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const user = new UserEntity();
       const userPassword = await bcrypt.hash(createUserDto.password, 10);
 
