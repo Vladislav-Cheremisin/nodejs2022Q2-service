@@ -100,7 +100,17 @@ export class AuthService {
     }
   }
 
-  async refresh() {
-    return 'nothing';
+  async refresh(userId: string, refreshToken: string) {
+    const user = await this.userRepo.findOneBy({ id: userId });
+
+    if (user && (await bcrypt.compare(refreshToken, user.refreshTokenHash))) {
+      const tokens = await this.signUser(user.id, user.login);
+
+      await this.saveRefreshTokenHash(user.id, tokens.refreshToken);
+
+      return tokens;
+    } else {
+      throw new HttpException(`Access Denied!`, HttpStatus.FORBIDDEN);
+    }
   }
 }
