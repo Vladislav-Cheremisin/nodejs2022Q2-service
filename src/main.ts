@@ -6,6 +6,7 @@ import { dirname, join } from 'path';
 import { parse } from 'yaml';
 import * as dotenv from 'dotenv';
 import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
   const port = config.get<number>('PORT');
+
+  app.useGlobalPipes(new ValidationPipe());
 
   const rootDir = dirname(__dirname);
   const docs = await readFile(
