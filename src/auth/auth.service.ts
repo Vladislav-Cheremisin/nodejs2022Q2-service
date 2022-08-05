@@ -34,7 +34,7 @@ export class AuthService {
         },
         {
           secret: process.env.JWT_REFRESH_SECRET,
-          expiresIn: 60 * 30,
+          expiresIn: 60 * 1,
         },
       ),
     ]);
@@ -53,7 +53,7 @@ export class AuthService {
     });
   }
 
-  async signUp(dto: SignUpDto): Promise<Tokens> {
+  async signUp(dto: SignUpDto): Promise<string> {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const newUser = this.userRepo.create({
@@ -63,11 +63,11 @@ export class AuthService {
 
     await this.userRepo.save(newUser);
 
-    const tokens = await this.signUser(newUser.id, newUser.login);
+    const response = JSON.stringify({
+      message: 'New user was created successfully',
+    });
 
-    await this.saveRefreshTokenHash(newUser.id, tokens.refreshToken);
-
-    return tokens;
+    return response;
   }
 
   async login(dto: SignUpDto): Promise<Tokens> {
@@ -87,17 +87,38 @@ export class AuthService {
     }
   }
 
-  async refresh(userId: string, refreshToken: string) {
-    const user = await this.userRepo.findOneBy({ id: userId });
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new HttpException(
+        `There are no refreshToken property in request body`,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
 
-    if (user && (await bcrypt.compare(refreshToken, user.refreshTokenHash))) {
-      const tokens = await this.signUser(user.id, user.login);
+    const payload = await this.jwtService
+      .verifyAsync(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      })
+      .catch(() => {
+        throw new HttpException(
+          `Incorrect refreshToken property in request body`,
+          HttpStatus.FORBIDDEN,
+        );
+      });
 
-      await this.saveRefreshTokenHash(user.id, tokens.refreshToken);
+    if (payload) {
+      const userId = payload.sub;
+      const user = await this.userRepo.findOneBy({ id: userId });
 
-      return tokens;
-    } else {
-      throw new HttpException(`Access Denied!`, HttpStatus.FORBIDDEN);
+      if (user && (await bcrypt.compare(refreshToken, user.refreshTokenHash))) {
+        const tokens = await this.signUser(user.id, user.login);
+
+        await this.saveRefreshTokenHash(user.id, tokens.refreshToken);
+
+        return tokens;
+      } else {
+        throw new HttpException(`Access Denied!`, HttpStatus.UNAUTHORIZED);
+      }
     }
   }
 }
