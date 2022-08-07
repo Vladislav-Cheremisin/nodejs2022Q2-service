@@ -1,8 +1,18 @@
 import { LoggerService } from '@nestjs/common';
 import * as fsPromises from 'fs/promises';
+
+const logLevel = ['log', 'error', 'warn'];
+
+for (let i = 0; i < 3 - +process.env.LOG_LEVEL; i++) {
+  logLevel.pop();
+}
 export class customLogger implements LoggerService {
   async log(message: string) {
     try {
+      if (!logLevel.includes('log')) {
+        return;
+      }
+
       await fsPromises.access('./logs');
       await fsPromises.writeFile(
         './logs/logs.txt',
@@ -29,6 +39,10 @@ export class customLogger implements LoggerService {
 
   async error(message: string) {
     try {
+      if (!logLevel.includes('error')) {
+        return;
+      }
+
       await fsPromises.access('./logs');
       await fsPromises.writeFile(
         './logs/errors.txt',
@@ -58,6 +72,10 @@ export class customLogger implements LoggerService {
 
   async warn(message: string) {
     try {
+      if (!logLevel.includes('warn')) {
+        return;
+      }
+
       await fsPromises.access('./logs');
       await fsPromises.writeFile(
         './logs/logs.txt',
