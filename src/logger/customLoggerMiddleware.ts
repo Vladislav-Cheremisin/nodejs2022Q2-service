@@ -11,6 +11,7 @@ export class customLoggerMiddleware implements NestMiddleware {
     const reqMethod = request.method;
     const reqUrl = request.originalUrl.split('?')[0];
     const userAgent = request.get('user-agent') || '';
+    const warnCodes = [110, 111, 112, 113, 199, 214, 219];
     let reqParams = JSON.stringify(request.query);
     let reqBody = JSON.stringify(request.body);
 
@@ -31,9 +32,15 @@ export class customLoggerMiddleware implements NestMiddleware {
       } Year: ${rawDate.getFullYear()} Time: ${rawDate.getHours()}:${rawDate.getMinutes()}:${rawDate.getSeconds()}`;
 
       if (resStatusCode < 400) {
-        this.logger.log(
-          `Method: ${reqMethod}\nStatusCode: ${resStatusCode}\nUrl: ${reqUrl}\nRequest params: ${reqParams}\nRequest body: ${reqBody}\nContent-length: ${resContentLength}\nUser agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,
-        );
+        if (warnCodes.includes(resStatusCode)) {
+          this.logger.warn(
+            `Method: ${reqMethod}\nStatusCode: ${resStatusCode}\nUrl: ${reqUrl}\nRequest params: ${reqParams}\nRequest body: ${reqBody}\nContent-length: ${resContentLength}\nUser agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,
+          );
+        } else {
+          this.logger.log(
+            `Method: ${reqMethod}\nStatusCode: ${resStatusCode}\nUrl: ${reqUrl}\nRequest params: ${reqParams}\nRequest body: ${reqBody}\nContent-length: ${resContentLength}\nUser agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,
+          );
+        }
       } else {
         this.logger.error(
           `Method: ${reqMethod}\nStatusCode: ${resStatusCode}\nError message: ${response.statusMessage}\nUrl: ${reqUrl}\nRequest params: ${reqParams}\nRequest body: ${reqBody}User agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,

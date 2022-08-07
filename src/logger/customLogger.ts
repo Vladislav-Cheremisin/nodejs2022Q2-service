@@ -9,6 +9,13 @@ export class customLogger implements LoggerService {
         message + `Level: logs\n\n`,
         { flag: 'a' },
       );
+
+      const fileStats = await fsPromises.lstat('./logs/logs.txt');
+      const fileSize = (fileStats.size / 1024).toFixed(2);
+
+      if (fileSize > process.env.MAX_LOGFILE_SIZE) {
+        fsPromises.rename('./logs/logs.txt', `./logs/logs_${Date.now()}.txt`);
+      }
     } catch {
       await fsPromises.mkdir('./logs');
       await fsPromises.access('./logs');
@@ -28,6 +35,16 @@ export class customLogger implements LoggerService {
         message + `Level: errors\n\n`,
         { flag: 'a' },
       );
+
+      const fileStats = await fsPromises.lstat('./logs/errors.txt');
+      const fileSize = (fileStats.size / 1024).toFixed(2);
+
+      if (fileSize > process.env.MAX_LOGFILE_SIZE) {
+        fsPromises.rename(
+          './logs/errors.txt',
+          `./logs/errors_${Date.now()}.txt`,
+        );
+      }
     } catch {
       await fsPromises.mkdir('./logs');
       await fsPromises.access('./logs');
@@ -40,6 +57,28 @@ export class customLogger implements LoggerService {
   }
 
   async warn(message: string) {
-    console.log(message);
+    try {
+      await fsPromises.access('./logs');
+      await fsPromises.writeFile(
+        './logs/logs.txt',
+        message + `Level: warnings\n\n`,
+        { flag: 'a' },
+      );
+
+      const fileStats = await fsPromises.lstat('./logs/logs.txt');
+      const fileSize = (fileStats.size / 1024).toFixed(2);
+
+      if (fileSize > process.env.MAX_LOGFILE_SIZE) {
+        fsPromises.rename('./logs/logs.txt', `./logs/logs_${Date.now()}.txt`);
+      }
+    } catch {
+      await fsPromises.mkdir('./logs');
+      await fsPromises.access('./logs');
+      await fsPromises.writeFile(
+        './logs/logs.txt',
+        message + `Level: warnings\n\n`,
+        { flag: 'a' },
+      );
+    }
   }
 }
