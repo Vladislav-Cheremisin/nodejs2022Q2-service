@@ -5,19 +5,11 @@ export class customLogger implements LoggerService {
     console.log(message);
   }
 
-  error() {
-    console.log('not implemented');
+  error(message: string) {
+    console.log(message);
   }
 
   warn() {
     console.log('not implemented');
-  }
-
-  debug(message: string) {
-    console.log(message);
-  }
-
-  verbose?(message: string) {
-    console.log(message);
   }
 }

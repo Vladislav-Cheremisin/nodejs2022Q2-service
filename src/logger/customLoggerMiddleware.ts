@@ -9,20 +9,36 @@ export class customLoggerMiddleware implements NestMiddleware {
   use(request: Request, response: Response, next: NextFunction): void {
     const reqIp = request.ip;
     const reqMethod = request.method;
-    const reqUrl = request.originalUrl;
+    const reqUrl = request.originalUrl.split('?')[0];
     const userAgent = request.get('user-agent') || '';
+    let reqParams = JSON.stringify(request.query);
+    let reqBody = JSON.stringify(request.body);
+
+    if (reqParams === '{}') {
+      reqParams = 'none';
+    }
+
+    if (reqBody === '{}') {
+      reqBody = 'none';
+    }
 
     response.on('finish', () => {
       const resStatusCode = response.statusCode;
       const resContentLength = response.get('content-length');
       const rawDate = new Date();
-      const dateToLog = `${rawDate.getDate()}:${
+      const dateToLog = `Day: ${rawDate.getDate()} Month: ${
         rawDate.getMonth() + 1
-      }:${rawDate.getFullYear()}`;
+      } Year: ${rawDate.getFullYear()} Time: ${rawDate.getHours()}:${rawDate.getMinutes()}:${rawDate.getSeconds()}`;
 
-      this.logger.log(
-        `Method: ${reqMethod}\nUrl: ${reqUrl}\nStatusCode: ${resStatusCode}\nContent-length: ${resContentLength}\nUser agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,
-      );
+      if (resStatusCode < 400) {
+        this.logger.log(
+          `Method: ${reqMethod}\nStatusCode: ${resStatusCode}\nUrl: ${reqUrl}\nRequest params: ${reqParams}\nRequest body: ${reqBody}\nContent-length: ${resContentLength}\nUser agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,
+        );
+      } else {
+        this.logger.error(
+          `Method: ${reqMethod}\nStatusCode: ${resStatusCode}\nError message: ${response.statusMessage}\nUrl: ${reqUrl}\nRequest params: ${reqParams}\nRequest body: ${reqBody}User agent: ${userAgent}\nIp: ${reqIp}\nRequest time: ${dateToLog}\n`,
+        );
+      }
     });
 
     next();
