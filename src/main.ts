@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule } from '@nestjs/swagger';
 import { readFile } from 'fs/promises';
@@ -8,6 +8,7 @@ import * as dotenv from 'dotenv';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { AccessGuard } from './common/guards/access.guard';
+import { AllExceptionsFilter } from './common/filters/custom-exception.filter';
 
 dotenv.config();
 
@@ -15,10 +16,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
   const port = config.get<number>('PORT');
+  const httpAdapter = app.get(HttpAdapterHost);
   const reflector = new Reflector();
 
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalGuards(new AccessGuard(reflector));
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
   const rootDir = dirname(__dirname);
   const docs = await readFile(
