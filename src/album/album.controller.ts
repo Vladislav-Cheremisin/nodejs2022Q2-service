@@ -13,6 +13,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { AlbumEntity } from './entities/album.entity';
 
 @Controller('album')
 export class AlbumController {
@@ -20,36 +21,38 @@ export class AlbumController {
 
   @Get()
   @Header('Content-type', 'application/json')
-  getAlbums(): string {
-    return this.albumService.getAlbums();
+  async getAlbums(): Promise<AlbumEntity[]> {
+    return await this.albumService.getAlbums();
   }
 
   @Get(':id')
   @Header('Content-type', 'application/json')
-  getAlbum(@Param('id') id: string): string {
-    return this.albumService.getAlbum(id);
+  async getAlbum(@Param('id') id: string): Promise<AlbumEntity> {
+    return await this.albumService.getAlbum(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-type', 'application/json')
-  createAlbum(@Body() createAlbumDto: CreateAlbumDto): string {
-    return this.albumService.createAlbum(createAlbumDto);
+  async createAlbum(
+    @Body() createAlbumDto: CreateAlbumDto,
+  ): Promise<AlbumEntity> {
+    return await this.albumService.createAlbum(createAlbumDto);
   }
 
   @Put(':id')
   @Header('Content-type', 'application/json')
-  updateAlbum(
+  async updateAlbum(
     @Body() updateAlbumDto: UpdateAlbumDto,
     @Param('id') id: string,
-  ): string {
-    return this.albumService.updateAlbum(updateAlbumDto, id);
+  ): Promise<AlbumEntity> {
+    return await this.albumService.updateAlbum(updateAlbumDto, id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header('Content-type', 'application/json')
-  deleteAlbum(@Param('id') id: string) {
-    return this.albumService.deleteAlbum(id);
+  async deleteAlbum(@Param('id') id: string) {
+    return await this.albumService.deleteAlbum(id);
   }
 }
