@@ -20,6 +20,12 @@ export class UserEntity {
   @Exclude()
   password: string;
 
+  @Column({
+    nullable: true,
+  })
+  @Exclude()
+  refreshTokenHash: string;
+
   @VersionColumn({
     default: 1,
   })
